@@ -5,26 +5,11 @@ import { store } from "./app/store"
 import "./index.css"
 import Home from "./features/home"
 import { RouterProvider, createBrowserRouter } from "react-router-dom"
-import { ImportProduct } from "./components/importProduct"
-import { Inventory } from "./components/inventory"
-import { ExportProduct } from "./components/exportProduct"
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Home />,
-  },
-  {
-    path: "/importProduct",
-    element: <ImportProduct />,
-  },
-  {
-    path: "/inventory",
-    element: <Inventory />,
-  },
-  {
-    path: "/exportProduct",
-    element: <ExportProduct />,
   },
 ])
 

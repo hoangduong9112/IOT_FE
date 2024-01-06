@@ -1,32 +1,30 @@
 import * as React from "react"
-import Link from "@mui/material/Link"
 import Table from "@mui/material/Table"
 import TableBody from "@mui/material/TableBody"
 import TableCell from "@mui/material/TableCell"
 import TableHead from "@mui/material/TableHead"
 import TableRow from "@mui/material/TableRow"
-import { Button } from "@mui/material"
-import { useState } from "react"
-
-// Generate Order Data
-function createData(id: number, name: string, count: number) {
-  return { id, name, count }
-}
-
-const rows = [
-  createData(1, "IPhone 13 Pro Max", 59),
-  createData(1, "IPhone 13 Pro", 59),
-  createData(1, "IPhone 15 Pro Max", 59),
-  createData(1, "IPhone 12 Pro Max", 59),
-  createData(1, "IPhone 11", 59),
-  createData(1, "IPhone 15", 59),
-]
+import { Button, Modal } from "@mui/material"
+import ImportProduct from "./importProduct"
+import { useAppDispatch, useAppSelector } from "../app/hooks"
+import { getProductsAsync } from "../features/home/homeSlice"
 
 export default function ProductList() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const dispatch = useAppDispatch()
+  const homeState = useAppSelector((state) => state.home)
+  React.useEffect(() => {
+    dispatch(getProductsAsync())
+  }, [])
+  const [open, setOpen] = React.useState(false)
+  const [currentName, setCurrentName] = React.useState("")
+  const [currentID, setCurrentID] = React.useState("")
 
   const handleLinkClick = () => {
-    setIsModalOpen(true)
+    setOpen(true)
+  }
+
+  const handleClose = () => {
+    setOpen(false)
   }
   return (
     <React.Fragment>
@@ -39,19 +37,33 @@ export default function ProductList() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
+          {homeState.products.map((row) => (
             <TableRow key={row.id}>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.count}</TableCell>
               <TableCell>
-                <Button onClick={handleLinkClick}>
-                  <Link href="/importProduct">Nhập sản phẩm</Link>
+                <Button
+                  onClick={() => {
+                    setCurrentName(row.name)
+                    setCurrentID(row.id)
+                    handleLinkClick()
+                  }}
+                >
+                  Nhập sản phẩm
                 </Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+      >
+        <ImportProduct productID={currentID} productName={currentName} />
+      </Modal>
     </React.Fragment>
   )
 }
