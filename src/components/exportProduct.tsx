@@ -1,19 +1,14 @@
 import * as React from "react"
 import Button from "@mui/material/Button"
 import CssBaseline from "@mui/material/CssBaseline"
-import TextField from "@mui/material/TextField"
 import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Container from "@mui/material/Container"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import { scan, stop } from "../services/mqtt"
-import {
-  exportProductsAsync,
-  getProductsAsync,
-} from "../features/home/homeSlice"
+import { exportProductsAsync } from "../features/home/homeSlice"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
-import { set } from "lodash"
 import { sumProducts } from "../utils/utilsFunction"
 
 const defaultTheme = createTheme()
@@ -26,8 +21,7 @@ export default function ExportProduct() {
   const [rfid, setRfid] = React.useState([])
   const [exportProducts, setExportProducts] = React.useState([])
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
+  const handleSubmit = () => {
     const IDs = []
     rfid.forEach((id) => {
       const product = homeState.products.find((product) => product.UID === id)
