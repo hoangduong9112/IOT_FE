@@ -6,25 +6,41 @@ import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Container from "@mui/material/Container"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
+import { scan, stop } from "../services/mqtt"
+import { useAppDispatch } from "../app/hooks"
+import { addProductsAsync, getProductsAsync } from "../features/home/homeSlice"
+import { v4 as uuidv4 } from "uuid"
 
 const defaultTheme = createTheme()
 
-export interface ImportProductProps {
-  productID?: string
-  productName?: string
-}
-
-export default function ImportProduct({
-  productID,
-  productName,
-}: ImportProductProps) {
+// eslint-disable-next-line no-dupe-args
+export default function ImportProduct({ categoryName = "", categoryID = "" }) {
   const [isScan, setIsScan] = React.useState(false)
+  const [input, setInput] = React.useState("")
+  const [rfid, setRfid] = React.useState([])
+  const dispatch = useAppDispatch()
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    console.log({
-      data,
-    })
+    dispatch(
+      addProductsAsync({
+        category_name: categoryName || input,
+        category_id: categoryID || uuidv4(),
+        UID: rfid,
+      }),
+    )
+  }
+
+  const handleScan = () => {
+    console.log("isScan", isScan)
+    if (isScan) {
+      setIsScan(false)
+      const result = stop()
+      setRfid(result)
+    } else {
+      setIsScan(true)
+      scan()
+    }
   }
 
   return (
@@ -57,20 +73,22 @@ export default function ImportProduct({
               margin="normal"
               required
               fullWidth
-              id="productName"
+              id="categoryName"
               label="Tên Sản phẩm"
               name="Tên Sản phẩm"
-              defaultValue={productName}
+              defaultValue={categoryName}
               autoFocus
-              disabled={!!productID}
+              disabled={!!categoryID}
+              onChange={(e) => {
+                setInput(e.target.value)
+              }}
             />
-            <Typography>Số lượng: 0</Typography>
+            <Typography>Số lượng: {rfid.length}</Typography>
             <Button
-              type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
-              onClick={() => (isScan ? setIsScan(false) : setIsScan(true))}
+              onClick={handleScan}
             >
               {!isScan ? "Quét sản phẩm" : "Kết thúc"}
             </Button>

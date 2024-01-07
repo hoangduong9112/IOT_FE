@@ -8,13 +8,16 @@ import { Button, Modal } from "@mui/material"
 import ImportProduct from "./importProduct"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { getProductsAsync } from "../features/home/homeSlice"
+import * as _ from "lodash"
+import { sumProducts } from "../utils/utilsFunction"
 
 export default function ProductList() {
   const dispatch = useAppDispatch()
   const homeState = useAppSelector((state) => state.home)
+  const products = sumProducts(homeState.products)
   React.useEffect(() => {
     dispatch(getProductsAsync())
-  }, [])
+  }, [dispatch, homeState.shouldReload])
   const [open, setOpen] = React.useState(false)
   const [currentName, setCurrentName] = React.useState("")
   const [currentID, setCurrentID] = React.useState("")
@@ -37,15 +40,15 @@ export default function ProductList() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {homeState.products.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>{row.name}</TableCell>
+          {products.map((row) => (
+            <TableRow key={row.categoryID}>
+              <TableCell>{row.categoryName}</TableCell>
               <TableCell>{row.count}</TableCell>
               <TableCell>
                 <Button
                   onClick={() => {
-                    setCurrentName(row.name)
-                    setCurrentID(row.id)
+                    setCurrentName(row.categoryName)
+                    setCurrentID(row.categoryID)
                     handleLinkClick()
                   }}
                 >
@@ -62,7 +65,7 @@ export default function ProductList() {
         aria-labelledby="modal-title"
         aria-describedby="modal-description"
       >
-        <ImportProduct productID={currentID} productName={currentName} />
+        <ImportProduct categoryID={currentID} categoryName={currentName} />
       </Modal>
     </React.Fragment>
   )

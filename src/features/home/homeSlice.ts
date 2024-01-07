@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import { RootState } from "../../app/store"
-import { getProducts } from "./homeAPI"
+import { exportProducts, getProducts } from "./homeAPI"
+import { addProducts } from "./homeAPI"
 
 // export interface CounterState {
 //   value: number
@@ -10,6 +11,7 @@ import { getProducts } from "./homeAPI"
 const initialState = {
   products: [],
   status: "idle",
+  shouldReload: false,
 }
 
 // The function below is called a thunk and allows us to perform async logic. It
@@ -22,7 +24,23 @@ export const getProductsAsync = createAsyncThunk(
   async () => {
     const response = await getProducts()
     // The value we return becomes the `fulfilled` action payload
-    return response.data
+    return response.data.data
+  },
+)
+
+export const addProductsAsync = createAsyncThunk(
+  "home/addProducts",
+  async (data) => {
+    await addProducts(data)
+    // The value we return becomes the `fulfilled` action payload
+  },
+)
+
+export const exportProductsAsync = createAsyncThunk(
+  "home/exportProducts",
+  async (data) => {
+    await exportProducts(data)
+    // The value we return becomes the `fulfilled` action payload
   },
 )
 
@@ -40,6 +58,7 @@ export const counterSlice = createSlice({
     builder
       .addCase(getProductsAsync.pending, (state) => {
         state.status = "loading"
+        state.shouldReload = false
       })
       .addCase(getProductsAsync.fulfilled, (state, action) => {
         state.status = "idle"
@@ -47,6 +66,12 @@ export const counterSlice = createSlice({
       })
       .addCase(getProductsAsync.rejected, (state) => {
         state.status = "failed"
+      })
+      .addCase(addProductsAsync.fulfilled, (state, action) => {
+        state.shouldReload = true
+      })
+      .addCase(exportProductsAsync.fulfilled, (state, action) => {
+        state.shouldReload = true
       })
   },
 })
