@@ -5,22 +5,59 @@ import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Container from "@mui/material/Container"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
-import { scan, stop } from "../services/mqtt"
 import { exportProductsAsync } from "../features/home/homeSlice"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
 import { sumProducts } from "../utils/utilsFunction"
+import { toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import { clientAdmin } from "../services/mqtt"
 
 const defaultTheme = createTheme()
 
 export default function ExportProduct() {
   const dispatch = useAppDispatch()
+  const topicToSubscribe = "rfid/uid"
+
+  const showRedToast = () => {
+    toast.error("Failure", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        backgroundColor: "red",
+        color: "white",
+      },
+    })
+  }
+
+  const showGreenToast = () => {
+    toast.success("Success", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        backgroundColor: "green",
+        color: "white",
+      },
+    })
+  }
+
   const homeState = useAppSelector((state) => state.home)
+
+  const rfidList = React.useMemo(() => {
+    return homeState.products.map((product) => product.UID)
+  }, [homeState.products])
 
   const [isScan, setIsScan] = React.useState(false)
   const [rfid, setRfid] = React.useState([])
   const [exportProducts, setExportProducts] = React.useState([])
-
   const handleSubmit = () => {
     const IDs = []
     rfid.forEach((id) => {
@@ -33,19 +70,58 @@ export default function ExportProduct() {
   const handleScan = () => {
     if (isScan) {
       setIsScan(false)
-      const result = stop()
-      const products = []
-      setRfid(result)
-      result.forEach((id) => {
-        const product = homeState.products.find((product) => product.UID === id)
-        products.push(product)
+      clientAdmin.unsubscribe(topicToSubscribe, (err) => {
+        if (!err) {
+          console.log("Unsubscribed from topic: ", topicToSubscribe)
+        } else {
+          console.error("Unsubscription error:", err)
+        }
       })
-      setExportProducts(sumProducts(products))
     } else {
       setIsScan(true)
-      scan()
+
+      // Subscribe to the specified topic
+      clientAdmin.subscribe(topicToSubscribe, (err) => {
+        if (!err) {
+          console.log(`Subscribed to topic: ${topicToSubscribe}`)
+        } else {
+          console.error("Subscription error:", err)
+        }
+      })
+      // Callback when a message is received
+      clientAdmin.on("message", (topic, message) => {
+        console.log(`Received message on topic ${topic}: ${message.toString()}`)
+        if (rfidList.includes(message.toString())) {
+          if (!rfid.includes(message.toString())) {
+            setRfid((rfid) => [...rfid, message.toString()])
+            showGreenToast()
+          }
+        } else {
+          showRedToast()
+        }
+      })
+
+      // Callback when an error occurs
+      clientAdmin.on("error", (err) => {
+        console.error("MQTT clientAdmin error:", err)
+      })
+
+      // Callback when the clientAdmin is disconnected
+      clientAdmin.on("close", () => {
+        console.log("MQTT clientAdmin disconnected")
+      })
+      // scan()
     }
   }
+
+  React.useEffect(() => {
+    const products = []
+    rfid.forEach((id) => {
+      const product = homeState.products.find((product) => product.UID === id)
+      products.push(product)
+    })
+    setExportProducts(sumProducts(products))
+  }, [rfid])
 
   return (
     <ThemeProvider theme={defaultTheme}>

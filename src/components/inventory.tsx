@@ -7,9 +7,11 @@ import Container from "@mui/material/Container"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
 import { useAppSelector } from "../app/hooks"
-import { scan, stop } from "../services/mqtt"
 import { sumProducts } from "../utils/utilsFunction"
 import * as _ from "lodash"
+import { toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import { clientAdmin } from "../services/mqtt"
 
 const defaultTheme = createTheme()
 
@@ -21,25 +23,114 @@ export default function Inventory() {
   const [exportProducts, setExportProducts] = React.useState([])
   const [lackProducts, setlackProducts] = React.useState([])
 
-  const handleScan = () => {
+  const showRedToast = () => {
+    toast.error("Failure", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        backgroundColor: "red",
+        color: "white",
+      },
+    })
+  }
+
+  const showGreenToast = () => {
+    toast.success("Success", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        backgroundColor: "green",
+        color: "white",
+      },
+    })
+  }
+
+  // const handleScan = () => {
+  //   if (isScan) {
+  //     setIsScan(false)
+  //     const result = stop()
+  //     const products = []
+  //     setRfid(result)
+  //     result.forEach((id) => {
+  //       const product = homeState.products.find((product) => product.UID === id)
+  //       products.push(product)
+  //     })
+  //     setExportProducts(sumProducts(products))
+  //     setlackProducts(
+  //       sumProducts(_.differenceBy(homeState.products, products, "_id")),
+  //     )
+  //   } else {
+  //     setIsScan(true)
+  //     scan()
+  //   }
+  // }
+  const topicToSubscribe = "rfid/uid"
+  const rfidList = React.useMemo(() => {
+    return homeState.products.map((product) => product.UID)
+  }, [homeState.products])
+
+  const handleScan = React.useCallback(async () => {
+    console.log("isScan", isScan)
     if (isScan) {
       setIsScan(false)
-      const result = stop()
-      const products = []
-      setRfid(result)
-      result.forEach((id) => {
-        const product = homeState.products.find((product) => product.UID === id)
-        products.push(product)
+      clientAdmin.unsubscribe(topicToSubscribe, (err) => {
+        if (!err) {
+          console.log("Unsubscribed from topic: ", topicToSubscribe)
+        } else {
+          console.error("Unsubscription error:", err)
+        }
       })
-      setExportProducts(sumProducts(products))
-      setlackProducts(
-        sumProducts(_.differenceBy(homeState.products, products, "_id")),
-      )
     } else {
       setIsScan(true)
-      scan()
+
+      clientAdmin.subscribe(topicToSubscribe, (err) => {
+        if (!err) {
+          console.log(`Subscribed to topic: ${topicToSubscribe}`)
+        } else {
+          console.error("Subscription error:", err)
+        }
+      })
+      clientAdmin.on("message", (topic, message) => {
+        console.log(`Received message on topic ${topic}: ${message.toString()}`)
+        if (rfidList.includes(message.toString())) {
+          setRfid((rfid) => [...rfid, message.toString()])
+          showGreenToast()
+        } else {
+          showRedToast()
+        }
+      })
+
+      // Callback when an error occurs
+      clientAdmin.on("error", (err) => {
+        console.error("MQTT clientAdmin error:", err)
+      })
+
+      // Callback when the clientAdmin is disconnected
+      clientAdmin.on("close", () => {
+        console.log("MQTT clientAdmin disconnected")
+      })
     }
-  }
+  }, [isScan, rfidList])
+
+  React.useEffect(() => {
+    const products = []
+    rfid.forEach((id) => {
+      const product = homeState.products.find((product) => product.UID === id)
+      products.push(product)
+    })
+    setExportProducts(sumProducts(products))
+    setlackProducts(
+      sumProducts(_.differenceBy(homeState.products, products, "_id")),
+    )
+  }, [rfid])
 
   const handleSubmit = () => {
     const IDs = []

@@ -6,10 +6,13 @@ import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Container from "@mui/material/Container"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
-import { scan, stop } from "../services/mqtt"
-import { useAppDispatch } from "../app/hooks"
-import { addProductsAsync, getProductsAsync } from "../features/home/homeSlice"
+import { clientAdmin } from "../services/mqtt"
+import { useAppDispatch, useAppSelector } from "../app/hooks"
+import { addProductsAsync } from "../features/home/homeSlice"
 import { v4 as uuidv4 } from "uuid"
+import "react-toastify/dist/ReactToastify.css"
+
+import { toast } from "react-toastify"
 
 const defaultTheme = createTheme()
 
@@ -19,7 +22,38 @@ export default function ImportProduct({ categoryName = "", categoryID = "" }) {
   const [input, setInput] = React.useState("")
   const [rfid, setRfid] = React.useState([])
   const dispatch = useAppDispatch()
+  const topicToSubscribe = "rfid/uid"
+  const homeState = useAppSelector((state) => state.home)
 
+  const showRedToast = () => {
+    toast.error("Failure", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        backgroundColor: "red",
+        color: "white",
+      },
+    })
+  }
+
+  const showGreenToast = () => {
+    toast.success("Success", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        backgroundColor: "green",
+        color: "white",
+      },
+    })
+  }
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     dispatch(
@@ -31,15 +65,65 @@ export default function ImportProduct({ categoryName = "", categoryID = "" }) {
     )
   }
 
+  // const handleScan = () => {
+  //   console.log("isScan", isScan)
+  //   if (isScan) {
+  //     setIsScan(false)
+  //     const result = stop()
+  //     setRfid(result)
+  //   } else {
+  //     setIsScan(true)
+  //     scan()
+  //   }
+  // }
+
+  const rfidList = React.useMemo(() => {
+    return homeState.products.map((product) => product.UID)
+  }, [homeState.products])
+
   const handleScan = () => {
-    console.log("isScan", isScan)
     if (isScan) {
       setIsScan(false)
-      const result = stop()
-      setRfid(result)
+
+      clientAdmin.unsubscribe(topicToSubscribe, (err) => {
+        if (!err) {
+          console.log("Unsubscribed from topic: ", topicToSubscribe)
+        } else {
+          console.error("Unsubscription error:", err)
+        }
+      })
     } else {
       setIsScan(true)
-      scan()
+      // Subscribe to the specified topic
+      clientAdmin.subscribe(topicToSubscribe, (err) => {
+        if (!err) {
+          console.log(`Subscribed to topic: ${topicToSubscribe}`)
+        } else {
+          console.error("Subscription error:", err)
+        }
+      })
+      // })
+      // Callback when a message is received
+      clientAdmin.on("message", (topic, message) => {
+        console.log(`Received message on topic ${topic}: ${message.toString()}`)
+        if (rfidList.includes(message.toString())) {
+          showRedToast()
+        } else {
+          setRfid((rfid) => [...rfid, message.toString()])
+          showGreenToast()
+        }
+      })
+
+      // Callback when an error occurs
+      clientAdmin.on("error", (err) => {
+        console.error("MQTT clientAdmin error:", err)
+      })
+
+      // Callback when the clientAdmin is disconnected
+      clientAdmin.on("close", () => {
+        console.log("MQTT clientAdmin disconnected")
+      })
+      // scan()
     }
   }
 

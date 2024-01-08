@@ -36,7 +36,7 @@ export default function ProductList() {
           <TableRow>
             <TableCell>Tên sản phẩm</TableCell>
             <TableCell>Số lượng</TableCell>
-            <TableCell></TableCell>
+            <TableCell>Chức năng</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
