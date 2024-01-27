@@ -11,10 +11,11 @@ import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { addProductsAsync } from "../features/home/homeSlice"
 import { v4 as uuidv4 } from "uuid"
 import "react-toastify/dist/ReactToastify.css"
-
 import { toast } from "react-toastify"
 
 const defaultTheme = createTheme()
+
+let abcd = []
 
 // eslint-disable-next-line no-dupe-args
 export default function ImportProduct({ categoryName = "", categoryID = "" }) {
@@ -25,8 +26,8 @@ export default function ImportProduct({ categoryName = "", categoryID = "" }) {
   const topicToSubscribe = "rfid/uid"
   const homeState = useAppSelector((state) => state.home)
 
-  const showRedToast = () => {
-    toast.error("Failure", {
+  const showRedToast = (bug) => {
+    toast.error(bug, {
       position: "top-right",
       autoClose: 3000,
       hideProgressBar: false,
@@ -107,10 +108,16 @@ export default function ImportProduct({ categoryName = "", categoryID = "" }) {
       clientAdmin.on("message", (topic, message) => {
         console.log(`Received message on topic ${topic}: ${message.toString()}`)
         if (rfidList.includes(message.toString())) {
-          showRedToast()
+          showRedToast("Sản phẩm đã tồn tại")
         } else {
-          setRfid((rfid) => [...rfid, message.toString()])
-          showGreenToast()
+          if (abcd.includes(message.toString())) {
+            showRedToast("Sản phẩm đã quét")
+          } else {
+            setRfid((rfid) => [...rfid, message.toString()])
+            abcd.push(message.toString())
+            showGreenToast()
+            console.log("abcd", abcd)
+          }
         }
       })
 

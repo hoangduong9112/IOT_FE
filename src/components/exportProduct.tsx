@@ -19,8 +19,8 @@ export default function ExportProduct() {
   const dispatch = useAppDispatch()
   const topicToSubscribe = "rfid/uid"
 
-  const showRedToast = () => {
-    toast.error("Failure", {
+  const showRedToast = (bug) => {
+    toast.error(bug, {
       position: "top-right",
       autoClose: 3000,
       hideProgressBar: false,
@@ -60,11 +60,15 @@ export default function ExportProduct() {
   const [exportProducts, setExportProducts] = React.useState([])
   const handleSubmit = () => {
     const IDs = []
+    const pro = []
+
     rfid.forEach((id) => {
       const product = homeState.products.find((product) => product.UID === id)
       IDs.push(product._id)
+      pro.push(product)
     })
-    dispatch(exportProductsAsync({ product_ids: IDs }))
+    const a = sumProducts(pro)
+    dispatch(exportProductsAsync({ product_ids: IDs, a }))
   }
 
   const handleScan = () => {
@@ -97,7 +101,7 @@ export default function ExportProduct() {
             showGreenToast()
           }
         } else {
-          showRedToast()
+          showRedToast("Sản phẩm không tồn tại")
         }
       })
 

@@ -14,5 +14,5 @@ export function addProducts(data) {
 export function exportProducts(data) {
   const url = "/cards/export"
   console.log("data", data)
-  return axiosClient.put(url, data)
+  return axiosClient.put(url, { product_ids: data.product_ids })
 }

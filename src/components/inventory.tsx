@@ -6,25 +6,28 @@ import Typography from "@mui/material/Typography"
 import Container from "@mui/material/Container"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material"
-import { useAppSelector } from "../app/hooks"
+import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { sumProducts } from "../utils/utilsFunction"
 import * as _ from "lodash"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { clientAdmin } from "../services/mqtt"
+import { createInventory } from "../features/home/homeSlice"
 
 const defaultTheme = createTheme()
 
 export default function Inventory() {
   const homeState = useAppSelector((state) => state.home)
+  const dispatch = useAppDispatch()
+
   const [rfid, setRfid] = React.useState([])
 
   const [isScan, setIsScan] = React.useState(false)
   const [exportProducts, setExportProducts] = React.useState([])
   const [lackProducts, setlackProducts] = React.useState([])
 
-  const showRedToast = () => {
-    toast.error("Failure", {
+  const showRedToast = (bug) => {
+    toast.error(bug, {
       position: "top-right",
       autoClose: 3000,
       hideProgressBar: false,
@@ -104,7 +107,7 @@ export default function Inventory() {
           setRfid((rfid) => [...rfid, message.toString()])
           showGreenToast()
         } else {
-          showRedToast()
+          showRedToast("Sản phẩm không tồn tại")
         }
       })
 
@@ -133,7 +136,7 @@ export default function Inventory() {
   }, [rfid])
 
   const handleSubmit = () => {
-    const IDs = []
+    dispatch(createInventory({ exportProducts, lackProducts }))
   }
 
   return (

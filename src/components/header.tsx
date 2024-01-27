@@ -4,13 +4,14 @@ import Button from "@mui/material/Button"
 import Toolbar from "@mui/material/Toolbar"
 import Typography from "@mui/material/Typography"
 import { Box } from "@mui/system"
-import { Modal } from "@mui/material"
+import { Link, Modal } from "@mui/material"
 import ImportProduct from "./importProduct"
 import ExportProduct from "./exportProduct"
 import Inventory from "./inventory"
 
 export function Header() {
   const [openImport, setOpenImport] = React.useState(false)
+
   const [openExport, setOpenExport] = React.useState(false)
   const [openInventory, setOpenInventory] = React.useState(false)
 
@@ -53,6 +54,16 @@ export function Header() {
               }}
             >
               Kiểm Kê
+            </Button>
+            <Button onClick={() => {}}>
+              <Link href="/history" style={{ color: "white" }}>
+                Lịch sử nhập xuất
+              </Link>
+            </Button>
+            <Button onClick={() => {}}>
+              <Link href="/historyInventory" style={{ color: "white" }}>
+                Lịch sử kiểm kê
+              </Link>
             </Button>
           </Box>
         </Toolbar>

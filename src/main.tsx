@@ -7,11 +7,21 @@ import Home from "./features/home"
 import { RouterProvider, createBrowserRouter } from "react-router-dom"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import History from "./features/history"
+import HistoryInventory from "./features/historyInventory"
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Home />,
+  },
+  {
+    path: "/history",
+    element: <History />,
+  },
+  {
+    path: "/historyInventory",
+    element: <HistoryInventory />,
   },
 ])
 
